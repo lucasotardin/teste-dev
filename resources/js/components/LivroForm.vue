@@ -1,54 +1,69 @@
 <template>
-    <div class="card p-4 shadow">
-        <h5>{{ modoEdicao ? 'Editar Livro' : 'Novo Livro' }}</h5>
+    <div class="card p-4 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="mb-0 text-primary fw-bold">
+                <i class="fas fa-book me-2"></i>{{ modoEdicao ? 'Editar Livro' : 'Novo Livro' }}
+            </h5>
+            <button type="button" class="btn-close" aria-label="Close" @click="cancelar"></button>
+        </div>
         
         <form @submit.prevent="handleSubmit">
             
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label>Nome</label>
-                    <input v-model="form.nome" class="form-control" required>
+                    <label class="form-label fw-bold">Nome da Obra</label>
+                    <input v-model="form.nome" class="form-control" placeholder="Ex: O Senhor dos Anéis" required>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label>Autor</label>
-                    <input v-model="form.autor" class="form-control" required>
+                    <label class="form-label fw-bold">Autor</label>
+                    <input v-model="form.autor" class="form-control" placeholder="Ex: J.R.R. Tolkien" required>
                 </div>
             </div>
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label>Categoria</label>
+                    <label class="form-label fw-bold">Categoria</label>
                     <select v-model="form.categoria" class="form-select" required>
                         <option value="" disabled>Selecione uma Categoria</option>
                         <option v-for="cat in categorias" :key="cat" :value="cat">{{ cat }}</option>
                     </select>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label>Código (Único)</label>
-                    <input v-model="form.codigo" class="form-control" required>
+                    <label class="form-label fw-bold">Código (Único)</label>
+                    <input v-model="form.codigo" class="form-control" placeholder="Ex: ISBN-1234" required>
                 </div>
             </div>
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label>Tipo</label>
+                    <label class="form-label fw-bold">Tipo</label>
                     <select v-model="form.tipo" class="form-select" required>
                         <option value="" disabled>Selecione o Tipo</option>
-                        
                         <option value="Digital">Arquivo Digital</option>
-                        <option value="Físico">Físico</option>
-                    
+                        <option value="Físico">Livro Físico</option>
                     </select>
                 </div>
+                
                 <div class="col-md-6 mb-3">
-                    <label>{{ tamanhoLabel }}</label> 
-                    <input v-model="form.tamanho" class="form-control" required>
+                    <label class="form-label fw-bold">{{ tamanhoLabel }}</label> 
+                    
+                    <input 
+                        type="number" 
+                        step="0.01" 
+                        min="0"
+                        v-model="form.tamanho" 
+                        class="form-control" 
+                        required
+                        placeholder="Digite apenas números (Ex: 1.5)"
+                    >
+                    <small class="text-muted">Informe apenas o valor numérico.</small>
                 </div>
             </div>
 
-            <div class="d-flex justify-content-end mt-3">
-                <button type="button" @click="cancelar" class="btn btn-secondary me-2">Cancelar</button>
-                <button type="submit" :disabled="isSubmitting" :class="modoEdicao ? 'btn btn-warning' : 'btn btn-primary'">
+            <div class="d-flex justify-content-end mt-4 pt-3 border-top">
+                <button type="button" @click="cancelar" class="btn btn-light me-2 text-secondary fw-bold">Cancelar</button>
+                <button type="submit" :disabled="isSubmitting" :class="modoEdicao ? 'btn btn-warning fw-bold' : 'btn btn-success fw-bold'">
+                    <i class="fas fa-save me-1"></i>
                     {{ isSubmitting ? 'Salvando...' : (modoEdicao ? 'Salvar Alterações' : 'Cadastrar Livro') }}
                 </button>
             </div>
@@ -68,10 +83,10 @@ export default {
                 autor: '',
                 categoria: '',
                 codigo: '',
-                tipo: 'Digital', // Valor padrão já correto (Maiúsculo)
+                tipo: 'Digital', // Valor padrão
                 tamanho: '',
             },
-            tamanhoLabel: 'Tamanho do Arquivo (MB/GB)',
+            tamanhoLabel: 'Tamanho do Arquivo (MB/GB)', // Label padrão
             isSubmitting: false,
             modoEdicao: false
         };
@@ -82,22 +97,21 @@ export default {
             livroParaEditar: 'livroEmEdicao' 
         })
     },
+    // AQUI ESTÁ A MÁGICA DO WATCH
     watch: {
         'form.tipo': {
-            immediate: true, 
-            handler(newVal) {
-                // Aceita tanto maiúsculo quanto minúsculo para mudar o texto visualmente
-                if (newVal && newVal.toLowerCase().includes('fisico')) {
-                    this.tamanhoLabel = 'Peso (g/kg)';
+            immediate: true, // Executa assim que o componente abre
+            handler(novoValor) {
+                if (novoValor === 'Físico') {
+                    this.tamanhoLabel = 'Peso do Livro (em Kg)';
                 } else {
-                    this.tamanhoLabel = 'Tamanho do Arquivo (MB/GB)';
+                    this.tamanhoLabel = 'Tamanho do Arquivo (em MB)';
                 }
             }
         }
     },
     mounted() {
         if (this.livroParaEditar) {
-            // Clona os dados para editar
             this.form = { ...this.livroParaEditar };
             this.modoEdicao = true;
         }
@@ -107,32 +121,31 @@ export default {
         
         async handleSubmit() {
             this.isSubmitting = true;
-            
-            // GARANTIA EXTRA: Força o valor correto antes de enviar
-            // Isso previne que um dado antigo (minúsculo) quebre a edição
+
+            // Garantia de formatação correta do Tipo
             let tipoCorrigido = this.form.tipo;
-            if (tipoCorrigido.toLowerCase() === 'fisico' || tipoCorrigido === 'Físico') {
+            if (tipoCorrigido && tipoCorrigido.toLowerCase().includes('físico')) {
                 tipoCorrigido = 'Físico';
             } else {
                 tipoCorrigido = 'Digital';
             }
 
-            const data = { 
-                ...this.form,
-                tipo: tipoCorrigido 
-            };
-            
+            const data = { ...this.form, tipo: tipoCorrigido };
             const action = this.modoEdicao ? 'updateLivro' : 'createLivro';
             
             try {
                 await this.$store.dispatch(action, data);
-                alert(this.modoEdicao ? "Atualizado com sucesso!" : "Criado com sucesso!");
+                alert(this.modoEdicao ? "Livro atualizado!" : "Livro cadastrado!");
                 this.limparERechar();
             } catch (error) {
-                // Mostra o erro exato que o Laravel devolveu
-                const msg = error.response?.data?.message || "Erro de validação.";
-                alert("Erro ao salvar: " + msg);
-                console.error("Detalhes do erro:", error.response?.data);
+                const errorMsg = error.response?.data?.message || "Erro ao salvar livro.";
+                // Se tiver erros de validação específicos, mostra o primeiro
+                const fieldErrors = error.response?.data?.errors;
+                let detalhe = "";
+                if(fieldErrors) {
+                    detalhe = "\n" + Object.values(fieldErrors).flat().join("\n");
+                }
+                alert(errorMsg + detalhe);
             } finally {
                 this.isSubmitting = false;
             }

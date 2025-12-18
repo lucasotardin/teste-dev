@@ -10,12 +10,14 @@ class LivroStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nome'      => 'required|string|max:255',
-            'autor'     => 'required|string|max:255',
-            'categoria' => 'required|string|max:255',
-            'codigo'    => 'required|string|unique:livros|max:50', // Único
-            'tipo' => 'required|string|in:Digital,Físico',
-            'tamanho'   => 'required|string|max:100',
-        ];
+        'nome' => 'required|string|max:255',
+        'autor' => 'required|string|max:255',
+        'categoria' => 'required|string',
+        'codigo' => 'required|string|unique:livros,codigo',
+        'tipo' => 'required|string|in:Digital,Físico',
+        
+        // MUDE AQUI: De 'string' para 'numeric'
+        'tamanho' => 'required|numeric', 
+    ];
     }
 }
